@@ -54,9 +54,9 @@ int main(int argc, char **argv)
 		printf("connect error");
 		exit(0);
 	}
-	n=write(sockfd,argv[2],strlen(argv[2]));
-	//printf("num:%d  %d\n",n,strlen(argv[2]));
-	write(sockfd, account, sizeof(account));
+	n=write(sockfd,argv[2],10);
+	n=write(sockfd, account, sizeof(account));
+	cli_update(sockfd);
 	printf("%s login successfully!\ncmd/>", account);
 
 	/*a socket for connent client*/
@@ -86,6 +86,9 @@ int main(int argc, char **argv)
 		else if (strcmp(str, "exit") == 0)
 		{
 			exit(0);
+		}
+		else if(strcmp(str,"update")==0){
+			cli_update(sockfd);
 		}
 		else if (strcmp(str, "list") == 0)
 		{

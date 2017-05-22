@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <memory.h>
 #include <dirent.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -85,15 +86,17 @@ again:
 	return;
 }
 
-void ser_update(int sockfd)
+void ser_update(int sockfd,int index)
 {
 	char recvline[100] = {'\0'};
-	int n = 100;
-	for (; n == 100;)
+	int n = 100,i;
+	for (i=0; n == 100;i++)
 	{
 		n = read(sockfd, recvline, 100);
 		if (n == 100)
 		{
+			strcpy(LoginInfo[index].filelist[i],recvline);
+			LoginInfo[index].num++;
 			printf("%s\t", recvline);
 		}
 		else if (n == 2)
@@ -113,7 +116,7 @@ void ser_ls(char *tmp, int connfd)
 	struct dirent *ent = NULL;
 	DIR *pDir;
 	char sendline[100] = {'\0'};
-	printf("path is:%s\n",tmp);
+	//printf("path is:%s\n",tmp);
 	while ((pDir = opendir(tmp)) == NULL)
 	{
 		printf("cannot open direactory.");
@@ -140,7 +143,7 @@ void ser_ls(char *tmp, int connfd)
 
 int ser_Iscmd(char cmd[CMD_SIZE])
 {
-	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "upload") || !strcmp(cmd, "download"))
+	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "upload") || !strcmp(cmd, "download") || !strcmp(cmd, "catch"))
 		return 1;
 	else
 		return 0;
@@ -163,6 +166,9 @@ void ser_cmd_Up(int connfd, char str[CMD_SIZE], char strname[OPT_SIZE], struct L
 	{
 		mkdir(strname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		return;
+	}
+	else if(!strcmp(str,"catch")){
+		ser_find(connfd,strname);
 	}
 	else
 	{
@@ -247,6 +253,36 @@ again:
 	return;
 }
 
+int ser_find(int fd,char *filename){
+	int count=0,i;
+	char mes[OPT_SIZE+10];
+	char *delim="-";
+	for(i=0;i<CONN_SETSIZE;i++){
+		if(LoginInfo[i].client==-1){
+			continue;
+		printf("%d,",i);
+		}else{
+			int j;
+			for(j=0;j<LoginInfo[i].num;j++){
+				printf("%s\n",LoginInfo[i].filelist[j]);
+				if(!strcmp(filename,LoginInfo[i].filelist[j])){
+					count++;
+					printf("%d count\n",count);
+					strcat(mes,LoginInfo[i].sin_addr);
+					strcat(mes,delim);
+					strcat(mes,LoginInfo[i].bin_port);
+					printf("%s mes\n",mes);
+					write(fd,mes,sizeof(mes));
+					memset(mes,0,sizeof(mes));
+					//break;
+				}
+			}
+		}
+	}
+	write(fd,mes,1);
+	return count;
+}
+
 void *doit(void *arg)
 {
 	int i=*((int*)arg);
@@ -270,12 +306,20 @@ void *doit(void *arg)
 		{
 			ser_list(sockfd, LoginInfo);
 		}
+		else if(strcmp(str,"update")==0){
+			ser_update(sockfd,i);
+			int j;
+			for(j=0;j<LoginInfo[i].num;j++){
+				printf("%s\t",LoginInfo[i].filelist[j]);
+			}
+		}
 		else if (strcmp(str, "exit") == 0)
 		{
 			printf("disconnection form:%s  port:%d\n", LoginInfo[i].sin_addr, LoginInfo[i].sin_port);
 			//close(sockfd);
 			//FD_CLR(sockfd, &allset);
-			bzero(&LoginInfo[i],sizeof(LoginInfo[i]));
+			memset(&LoginInfo[i],0,sizeof(LoginInfo[i]));
+			printf("%s\n",LoginInfo[i].sin_addr);
 			LoginInfo[i].client = -1;
 			close(sockfd);
 			return(NULL);

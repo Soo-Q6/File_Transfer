@@ -112,7 +112,7 @@ void cli_update(int connfd){
 	struct dirent* ent = NULL;
 	DIR *pDir;
 	char sendline[100] = { '\0' };
-	while ((pDir = opendir("file")) == NULL)
+	while ((pDir = opendir("cli_file")) == NULL)
 	{
 		printf("cannot open direactory.");
 		write(connfd, sendline, 2);
@@ -136,7 +136,7 @@ void cli_update(int connfd){
 }
 
 int cli_Iscmd(char cmd[CMD_SIZE]) {
-	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "download") || !strcmp(cmd, "upload") || !strcmp(cmd,"connect"))
+	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "download") || !strcmp(cmd, "upload") || !strcmp(cmd,"catch"))
 		return 1;
 	else
 		return 0;
@@ -164,6 +164,23 @@ void cli_cmd_Up(int sockfd, char str[CMD_SIZE], char strname[OPT_SIZE]) {
 		send(sockfd, strname, OPT_SIZE, 0);
 		printf("create dir %s successfuly\n", strname);
 		return;
+	}
+	else if(!strcmp(str,"catch")){
+		char mes[OPT_SIZE+10];
+		int index=0;
+		char *delim="-";
+		char *pch;
+		struct File_info info[CONN_SIZE];
+		send(sockfd,strname,OPT_SIZE,0);
+		while (read(sockfd, mes, sizeof(mes)) > 1)
+		{
+			printf("%s\n",mes);
+			pch = strtok(mes, delim);
+			strcpy(info[index].sin_addr,pch);
+			pch=strtok(NULL,delim);
+			info[index].sin_port=atoi(pch);
+			index++;
+		}
 	}
 	else
 	{

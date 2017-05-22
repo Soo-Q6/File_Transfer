@@ -10,12 +10,18 @@
 #define LISTENQ 1024
 #define CMD_SIZE 10
 #define OPT_SIZE 30
+#define CONN_SIZE 20
 #define SA struct sockaddr
 #define max(a,b)  ((a)>(b)?(a):(b))
 
 struct Login_info {
 	int client;
 	char account[ACCOUNT_SIZE];
+	char sin_addr[OPT_SIZE];
+	int sin_port;
+};
+
+struct File_info{
 	char sin_addr[OPT_SIZE];
 	int sin_port;
 };

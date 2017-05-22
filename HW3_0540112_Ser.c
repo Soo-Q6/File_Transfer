@@ -14,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-	//setvbuf(stdout,NULL,_IONBF,0);
+	setvbuf(stdout,NULL,_IONBF,0);
 	int listenfd, connfd, sockfd,i;
 	pthread_t tid;
 	ssize_t n;
@@ -38,6 +38,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < CONN_SETSIZE; i++)
 	{
 		LoginInfo[i].client = -1;
+		LoginInfo[i].num=0;
 	}
 
 	for (;;)
@@ -49,11 +50,11 @@ int main(int argc, char **argv)
 			printf("cannot accept the client's connction!\n");
 			continue;
 		}
-		printf("thisi s:%s\n",inet_ntoa(cliaddr.sin_addr));
 		for (i = 0; i < CONN_SETSIZE; i++)
 			if (LoginInfo[i].client < 0)
 			{
 				char tmp[10];
+				char tmp_a[ACCOUNT_SIZE];
 				LoginInfo[i].client = connfd; /* save descriptor */
 				strcpy(LoginInfo[i].sin_addr,inet_ntoa(cliaddr.sin_addr));
 				LoginInfo[i].sin_port = ntohs(cliaddr.sin_port);
@@ -61,19 +62,26 @@ int main(int argc, char **argv)
 					printf("getting client bind port error\n");
 				}else{
 					tmp[n]='\0';
-					LoginInfo[i].bin_port=atoi(tmp);
-					//printf("port:%s\n",tmp);
+					strcpy(LoginInfo[i].bin_port,tmp);
 				}
-				if ((n=read(connfd, LoginInfo[i].account, ACCOUNT_SIZE)) < 0)
+				if ((n=read(connfd, tmp_a, sizeof(tmp_a))) < 0)
 				{
 					printf("getting account number error\n");
 					exit(0);
 				}
 				else
 				{
-					LoginInfo[i].account[n]='\0';
-					printf("%s login, its ipaddr is %s and its sin_port is %d, bin_port is %d.\n", LoginInfo[i].account, LoginInfo[i].sin_addr, LoginInfo[i].sin_port,LoginInfo[i].bin_port);
+					//LoginInfo[i].account[n]='\0';
+					printf("this is name:%s  %d\n",tmp_a,n);
+					strcpy(LoginInfo[i].account,tmp_a);
+					printf("%s login, its ipaddr is %s and its sin_port is %d, bin_port is %s.\n", LoginInfo[i].account, LoginInfo[i].sin_addr, LoginInfo[i].sin_port,LoginInfo[i].bin_port);
 				}
+				ser_update(connfd, i);
+				// int j;
+				// for (j = 0; j < LoginInfo[i].num; j++)
+				// {
+				// 	printf("%s\t", LoginInfo[i].filelist[j]);
+				// }
 				break;
 			}
 		if(pthread_create(&tid, NULL, &doit,  &i)){

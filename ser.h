@@ -19,8 +19,9 @@ struct Login_info {
 	char account[ACCOUNT_SIZE];
 	char sin_addr[OPT_SIZE];
 	int sin_port;
-	int bin_port;
+	char bin_port[10];
 	char filelist[LIST_SIZE][OPT_SIZE];
+	int num;
 };
 struct Login_info LoginInfo[CONN_SETSIZE];
 /**
@@ -70,9 +71,11 @@ void ser_broadcast(int connfd,int udpfd);
 @server
 update the sourse from the client
 */
-void ser_update(int fd);
+void ser_update(int fd,int index);
 
 void *doit(void *arg);
+
+int ser_find(int fd,char *filename);
 
 #endif // !SERVER_H
 
