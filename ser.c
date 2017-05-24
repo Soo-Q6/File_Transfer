@@ -266,20 +266,16 @@ int ser_find(int fd,char *filename){
 	for(i=0;i<CONN_SETSIZE;i++){
 		if(LoginInfo[i].client==-1){
 			continue;
-		printf("%d,",i);
 		}else{
 			int j;
 			for(j=0;j<LoginInfo[i].num;j++){
-				printf("%s\n",LoginInfo[i].filelist[j]);
 				if(!strcmp(filename,LoginInfo[i].filelist[j])){
 					count++;
-					printf("%d count\n",count);
 					strcat(mes,LoginInfo[i].sin_addr);
 					strcat(mes,delim);
 					strcat(mes,LoginInfo[i].bin_port);
 					strcat(mes,delim);
 					strcat(mes,LoginInfo[i].filesize[j]);
-					printf("%s mes\n",mes);
 					write(fd,mes,sizeof(mes));
 					memset(mes,0,sizeof(mes));
 					//break;
