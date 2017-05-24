@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
@@ -28,6 +29,7 @@ int main(int argc, char **argv)
 	time_t ticks;
 	char str[10], str_name[20];
 	int on = 1;
+	pthread_t tid;
 	//char *ipaddr = "127.0.0.1";
 	if (argc != 3)
 	{
@@ -66,10 +68,11 @@ int main(int argc, char **argv)
 	bzero(&connaddr, sizeof(connaddr));
 	connaddr.sin_family = AF_INET;
 	connaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	connaddr.sin_port = htons(CONN_PORT);
+	connaddr.sin_port = htons(atoi(argv[2]));
 
 	bind(listenfd, (SA *)&connaddr, sizeof(connaddr));
 	listen(listenfd, LISTENQ);
+	pthread_create(&tid,NULL,&cli_listen,&listenfd);
 
 	for (;;)
 	{

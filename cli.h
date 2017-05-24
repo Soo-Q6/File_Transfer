@@ -24,6 +24,14 @@ struct Login_info {
 struct File_info{
 	char sin_addr[OPT_SIZE];
 	int sin_port;
+	int filesize;
+};
+
+struct Catch_info{
+	char file[OPT_SIZE];
+	int which_block;
+	char sin_addr[OPT_SIZE];
+	int sin_port;
 };
 
 /**
@@ -65,5 +73,11 @@ void str_echo(int sockfd);
 update the sourse for the server
 */
 void cli_update(int fd);
+
+void *cli_listen(void *fd);
+
+void *cli_catch(void *mes);
+
+unsigned long get_file_size(char *path,char *file);
 #endif // !CLIENT_H
 

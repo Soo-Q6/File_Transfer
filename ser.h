@@ -21,6 +21,7 @@ struct Login_info {
 	int sin_port;
 	char bin_port[10];
 	char filelist[LIST_SIZE][OPT_SIZE];
+	char filesize[LIST_SIZE][10];
 	int num;
 };
 struct Login_info LoginInfo[CONN_SETSIZE];

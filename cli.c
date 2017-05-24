@@ -9,6 +9,7 @@
 #include<errno.h>
 #include<stdlib.h>
 #include<dirent.h>
+#include<sys/stat.h>
 #include<unistd.h>
 #include"cli.h"
 
@@ -111,7 +112,9 @@ void cli_ls(int sockfd) {
 void cli_update(int connfd){
 	struct dirent* ent = NULL;
 	DIR *pDir;
+	char *delim="-";
 	char sendline[100] = { '\0' };
+	printf("the current path:%s\n",getcwd(NULL,NULL));
 	while ((pDir = opendir("cli_file")) == NULL)
 	{
 		printf("cannot open direactory.");
@@ -121,9 +124,16 @@ void cli_update(int connfd){
 	while ((ent = readdir(pDir)) != NULL)
 	{
 		strcpy(sendline, ent->d_name);
+		char tmp[10];
+		//itoa(get_file_size("cli_file",ent->d_name),tmp,10);
+		sprintf(tmp,"%d",get_file_size("cli_file",ent->d_name));
+		//printf("%s\t%s\n",ent->d_name,tmp);
 		if(strcmp(sendline,".")==0||strcmp(sendline,"..")==0){
 			continue;
 		}
+		strcat(sendline,delim);
+		strcat(sendline,tmp);
+		printf("%s \n",sendline);
 		if (write(connfd, sendline, sizeof(sendline)) < 0)
 		{
 			printf("write error: %s (errno:%d)", strerror(errno), errno);
@@ -165,26 +175,73 @@ void cli_cmd_Up(int sockfd, char str[CMD_SIZE], char strname[OPT_SIZE]) {
 		printf("create dir %s successfuly\n", strname);
 		return;
 	}
-	else if(!strcmp(str,"catch")){
-		char mes[OPT_SIZE+10];
-		int index=0;
-		char *delim="-";
+	else if (!strcmp(str, "catch"))
+	{
+		char mes[OPT_SIZE + 10];
+		int usercount = 0,i;
+		char *delim = "-";
 		char *pch;
+		int filesize;
+		pthread_t tid;
+		int blockcount;
+		struct Catch_info c_info;
 		struct File_info info[CONN_SIZE];
-		send(sockfd,strname,OPT_SIZE,0);
+		send(sockfd, strname, OPT_SIZE, 0);
 		while (read(sockfd, mes, sizeof(mes)) > 1)
 		{
-			printf("%s\n",mes);
+			//printf("%s\n", mes);
 			pch = strtok(mes, delim);
-			strcpy(info[index].sin_addr,pch);
-			pch=strtok(NULL,delim);
-			info[index].sin_port=atoi(pch);
-			index++;
+			strcpy(info[usercount].sin_addr, pch);
+			pch = strtok(NULL, delim);
+			info[usercount].sin_port = atoi(pch);
+			info[usercount].filesize=atoi(strtok(NULL,delim));
+			filesize=info[usercount].filesize;
+			printf("%s  %d  %d\n",info[usercount].sin_addr,info[usercount].sin_port,info[usercount].filesize);
+			usercount++;
+		}
+		blockcount=filesize/1024+1;
+		printf("blockcount:%d  usersize:%d  filesize:%d\n",blockcount,usercount,filesize);
+		for(i=0;i<blockcount;i++){
+			strcpy(c_info.file,strname);
+			c_info.which_block=i;
+			//printf("this is sin_addr:%s  %d\n",info[i%usercount].sin_addr,i);
+			strcpy(c_info.sin_addr,info[i%usercount].sin_addr);
+			printf("this is sin_addr:%s  %d\n",c_info.sin_addr,i);
+			c_info.sin_port=info[i%usercount].sin_port;
+			if(pthread_create(&tid,NULL,&cli_catch,&c_info)){
+				printf("%s  errno:%d",strerror(errno),errno);
+			}
+			memset(&c_info,0,sizeof(c_info));
 		}
 	}
 	else
 	{
 		printf("error\n");
+	}
+}
+
+
+void *cli_listen(void *fd){
+	int listenfd=*((int*)fd);
+	int connfd;
+	FILE *f;
+	char *delim="-";
+	char recvline[MAXLINE];
+	char tmp[OPT_SIZE];
+	char file[OPT_SIZE];
+	int size;
+	printf("waiting for download connection!\n");
+	while((connfd=accept(listenfd,NULL,NULL))>0){
+		printf("download connecting successful!\n");
+		read(connfd,tmp,sizeof(tmp));
+		strcpy(file,strtok(tmp,delim));
+		f=fopen(file,"r");
+		size=atoi(strtok(NULL,delim));
+		fseek(f,size*1024,SEEK_SET);
+		fread(recvline,1,MAXLINE,f);
+		write(connfd,recvline,sizeof(recvline));
+		fclose(f);
+		close(connfd);
 	}
 }
 
@@ -223,4 +280,63 @@ again:
 		goto again;
 	else if (n < 0)
 		printf("str_echo:read error");
+}
+
+unsigned long get_file_size(char *path,char *file){
+	//unsigned long filesize;
+	struct stat statbuf;
+	chdir(path);
+	//stat(file,&statbuf);
+	if(stat(file,&statbuf)<0){
+		printf("%s  %d\n",strerror(errno),errno);
+		chdir("..");
+		return -1;
+	}else{
+		chdir("..");
+		return statbuf.st_size;
+	}
+}
+
+void *cli_catch(void *mes){
+	struct Catch_info c_info=*((struct Catch_info*)mes);
+	struct sockaddr_in cliaddr;
+	char *delim="=";
+	char tmp[OPT_SIZE];
+	char recvline[MAXLINE];
+	char tmp_w[5];
+	int sockfd,n;
+	printf("this is the block num i want to write:%d\n",c_info.which_block);
+	chdir("cli_file");
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+		printf("socket error");	
+		return NULL;	
+	}
+	bzero(&cliaddr, sizeof(cliaddr));
+	cliaddr.sin_family = AF_INET;
+	cliaddr.sin_port = htons(c_info.sin_port);
+	if (inet_pton(AF_INET, c_info.sin_addr, &cliaddr.sin_addr) <= 0){
+		printf("inet_ption error for %s\n", c_info.sin_addr);
+		return NULL;
+	}
+	if ((n = connect(sockfd, (SA *)&cliaddr, sizeof(cliaddr))) < 0){
+		printf("connect error");
+		//exit(0);
+		return NULL;
+	}
+	strcpy(tmp,c_info.file);
+	strcat(tmp,delim);
+	sprintf(tmp_w,"%d",c_info.which_block);
+	printf("this is which_block char:%s\n",tmp_w);
+	strcat(tmp,tmp_w);
+	printf("this is the message i want to send:%s\n",tmp);
+	write(sockfd,tmp,sizeof(tmp));
+	FILE *f=fopen(c_info.file,"w");
+	n=read(sockfd,recvline,sizeof(recvline));
+	printf("%d n\n",n);
+	fseek(f,c_info.which_block*1024,SEEK_SET);
+	fwrite(recvline,1,MAXLINE,f);
+	fclose(f);
+	close(sockfd);
+	pthread_exit(pthread_self());
+	return NULL;
 }

@@ -89,15 +89,19 @@ again:
 void ser_update(int sockfd,int index)
 {
 	char recvline[100] = {'\0'};
+	char *delim="-";
+	char *pch;
 	int n = 100,i;
 	for (i=0; n == 100;i++)
 	{
 		n = read(sockfd, recvline, 100);
 		if (n == 100)
 		{
-			strcpy(LoginInfo[index].filelist[i],recvline);
+			pch=strtok(recvline,delim);
+			strcpy(LoginInfo[index].filelist[i],pch);
+			strcpy(LoginInfo[index].filesize[i],strtok(NULL,delim));
 			LoginInfo[index].num++;
-			printf("%s\t", recvline);
+			printf("%s\t%s\n", LoginInfo[index].filelist[i],LoginInfo[index].filesize[i]);
 		}
 		else if (n == 2)
 		{
@@ -200,6 +204,8 @@ void ser_list(int sockfd, struct Login_info *logininfo)
 			strcat(sendline, "  port:");
 			sprintf(tmp, "%d", logininfo[i1].sin_port);
 			strcat(sendline, tmp);
+			strcat(sendline,"  bin_port:");
+			strcat(sendline,LoginInfo[i1].bin_port);
 			write(sockfd, sendline, sizeof(sendline));
 			bzero(sendline, strlen(sendline));
 		}
@@ -271,6 +277,8 @@ int ser_find(int fd,char *filename){
 					strcat(mes,LoginInfo[i].sin_addr);
 					strcat(mes,delim);
 					strcat(mes,LoginInfo[i].bin_port);
+					strcat(mes,delim);
+					strcat(mes,LoginInfo[i].filesize[j]);
 					printf("%s mes\n",mes);
 					write(fd,mes,sizeof(mes));
 					memset(mes,0,sizeof(mes));
