@@ -6,28 +6,31 @@
 #define ACCOUNT_SIZE 20
 #define SERV_PORT 8888
 #define CONN_PORT 9999
-#define UDP_PORT  6000
+#define UDP_PORT 6000
 #define LISTENQ 1024
 #define CMD_SIZE 10
 #define OPT_SIZE 30
 #define CONN_SIZE 20
 #define SA struct sockaddr
-#define max(a,b)  ((a)>(b)?(a):(b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
-struct Login_info {
+struct Login_info
+{
 	int client;
 	char account[ACCOUNT_SIZE];
 	char sin_addr[OPT_SIZE];
 	int sin_port;
 };
 
-struct File_info{
+struct File_info
+{
 	char sin_addr[OPT_SIZE];
 	int sin_port;
 	int filesize;
 };
 
-struct Catch_info{
+struct Catch_info
+{
 	char file[OPT_SIZE];
 	int which_block;
 	char sin_addr[OPT_SIZE];
@@ -38,12 +41,12 @@ struct Catch_info{
 @client
 select a file and send it to the socket
 */
-void cli_upload(const char* filename,int sockfd);
+void cli_upload(const char *filename, int sockfd);
 /**
 @client
 download a file from server
 */
-void cli_download(const char* filename, int sockfd);
+void cli_download(const char *filename, int sockfd);
 
 /**
 @client
@@ -78,6 +81,5 @@ void *cli_listen(void *fd);
 
 void *cli_catch(void *mes);
 
-unsigned long get_file_size(char *path,char *file);
+unsigned long get_file_size(char *path, char *file);
 #endif // !CLIENT_H
-

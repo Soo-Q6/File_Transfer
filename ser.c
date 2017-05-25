@@ -28,11 +28,12 @@ void ser_download(const char *filename, int sockfd)
 		//exit(0);
 		return;
 	}
+	chdir("..");
 again:
 	while ((n = fread(buf, 1, MAXLINE, fp)) > 0)
 	{
 		write(sockfd, buf, MAXLINE);
-		bzero(buf,sizeof(buf));
+		bzero(buf, sizeof(buf));
 	}
 	if (n < 0 && errno == EINTR)
 		goto again;
@@ -55,9 +56,9 @@ void ser_upload(const char *filename, int sockfd)
 		printf("open file error\n");
 		exit(0);
 	}
-	//fprintf(fp, "account:%s\taddr:%s\tport:%d", logininfo.account, logininfo.sin_addr, logininfo.sin_port);
+//fprintf(fp, "account:%s\taddr:%s\tport:%d", logininfo.account, logininfo.sin_addr, logininfo.sin_port);
 again:
-	while ((n = read(sockfd, recvline, MAXLINE)) >1)
+	while ((n = read(sockfd, recvline, MAXLINE)) > 1)
 	{
 		//int i=0;
 		//printf("%d\n",i);
@@ -72,7 +73,8 @@ again:
 			remove(filename);
 			return;
 		}
-		else{
+		else
+		{
 			fwrite(recvline, 1, n, fp);
 		}
 	}
@@ -86,22 +88,22 @@ again:
 	return;
 }
 
-void ser_update(int sockfd,int index)
+void ser_update(int sockfd, int index)
 {
 	char recvline[100] = {'\0'};
-	char *delim="-";
+	char *delim = "-";
 	char *pch;
-	int n = 100,i;
-	for (i=0; n == 100;i++)
+	int n = 100, i;
+	for (i = 0; n == 100; i++)
 	{
 		n = read(sockfd, recvline, 100);
 		if (n == 100)
 		{
-			pch=strtok(recvline,delim);
-			strcpy(LoginInfo[index].filelist[i],pch);
-			strcpy(LoginInfo[index].filesize[i],strtok(NULL,delim));
+			pch = strtok(recvline, delim);
+			strcpy(LoginInfo[index].filelist[i], pch);
+			strcpy(LoginInfo[index].filesize[i], strtok(NULL, delim));
 			LoginInfo[index].num++;
-			printf("%s\t%s\n", LoginInfo[index].filelist[i],LoginInfo[index].filesize[i]);
+			printf("%s\t%s\n", LoginInfo[index].filelist[i], LoginInfo[index].filesize[i]);
 		}
 		else if (n == 2)
 		{
@@ -171,8 +173,9 @@ void ser_cmd_Up(int connfd, char str[CMD_SIZE], char strname[OPT_SIZE], struct L
 		mkdir(strname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		return;
 	}
-	else if(!strcmp(str,"catch")){
-		ser_find(connfd,strname);
+	else if (!strcmp(str, "catch"))
+	{
+		ser_find(connfd, strname);
 	}
 	else
 	{
@@ -204,8 +207,8 @@ void ser_list(int sockfd, struct Login_info *logininfo)
 			strcat(sendline, "  port:");
 			sprintf(tmp, "%d", logininfo[i1].sin_port);
 			strcat(sendline, tmp);
-			strcat(sendline,"  bin_port:");
-			strcat(sendline,LoginInfo[i1].bin_port);
+			strcat(sendline, "  bin_port:");
+			strcat(sendline, LoginInfo[i1].bin_port);
 			write(sockfd, sendline, sizeof(sendline));
 			bzero(sendline, strlen(sendline));
 		}
@@ -259,37 +262,44 @@ again:
 	return;
 }
 
-int ser_find(int fd,char *filename){
-	int count=0,i;
-	char mes[OPT_SIZE+10];
-	char *delim="-";
-	for(i=0;i<CONN_SETSIZE;i++){
-		if(LoginInfo[i].client==-1){
+int ser_find(int fd, char *filename)
+{
+	int count = 0, i;
+	char mes[OPT_SIZE + 10];
+	char *delim = "-";
+	for (i = 0; i < CONN_SETSIZE; i++)
+	{
+		if (LoginInfo[i].client == -1)
+		{
 			continue;
-		}else{
+		}
+		else
+		{
 			int j;
-			for(j=0;j<LoginInfo[i].num;j++){
-				if(!strcmp(filename,LoginInfo[i].filelist[j])){
+			for (j = 0; j < LoginInfo[i].num; j++)
+			{
+				if (!strcmp(filename, LoginInfo[i].filelist[j]))
+				{
 					count++;
-					strcat(mes,LoginInfo[i].sin_addr);
-					strcat(mes,delim);
-					strcat(mes,LoginInfo[i].bin_port);
-					strcat(mes,delim);
-					strcat(mes,LoginInfo[i].filesize[j]);
-					write(fd,mes,sizeof(mes));
-					memset(mes,0,sizeof(mes));
+					strcat(mes, LoginInfo[i].sin_addr);
+					strcat(mes, delim);
+					strcat(mes, LoginInfo[i].bin_port);
+					strcat(mes, delim);
+					strcat(mes, LoginInfo[i].filesize[j]);
+					write(fd, mes, sizeof(mes));
+					memset(mes, 0, sizeof(mes));
 					//break;
 				}
 			}
 		}
 	}
-	write(fd,mes,1);
+	write(fd, mes, 1);
 	return count;
 }
 
 void *doit(void *arg)
 {
-	int i=*((int*)arg);
+	int i = *((int *)arg);
 	int sockfd;
 	sockfd = LoginInfo[i].client;
 	while (1)
@@ -310,11 +320,13 @@ void *doit(void *arg)
 		{
 			ser_list(sockfd, LoginInfo);
 		}
-		else if(strcmp(str,"update")==0){
-			ser_update(sockfd,i);
+		else if (strcmp(str, "update") == 0)
+		{
+			ser_update(sockfd, i);
 			int j;
-			for(j=0;j<LoginInfo[i].num;j++){
-				printf("%s\t",LoginInfo[i].filelist[j]);
+			for (j = 0; j < LoginInfo[i].num; j++)
+			{
+				printf("%s\t", LoginInfo[i].filelist[j]);
 			}
 		}
 		else if (strcmp(str, "exit") == 0)
@@ -322,11 +334,11 @@ void *doit(void *arg)
 			printf("disconnection form:%s  port:%d\n", LoginInfo[i].sin_addr, LoginInfo[i].sin_port);
 			//close(sockfd);
 			//FD_CLR(sockfd, &allset);
-			memset(&LoginInfo[i],0,sizeof(LoginInfo[i]));
-			printf("%s\n",LoginInfo[i].sin_addr);
+			memset(&LoginInfo[i], 0, sizeof(LoginInfo[i]));
+			printf("%s\n", LoginInfo[i].sin_addr);
 			LoginInfo[i].client = -1;
 			close(sockfd);
-			return(NULL);
+			return (NULL);
 			//exit(0);
 			//break;
 		}
@@ -340,6 +352,7 @@ void *doit(void *arg)
 		{
 			printf("commander wrong!\n");
 		}
+		chdir("..");
 	}
-	return(NULL);
+	return (NULL);
 }

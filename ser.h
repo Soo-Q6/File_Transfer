@@ -12,9 +12,10 @@
 #define CMD_SIZE 10
 #define OPT_SIZE 30
 #define SA struct sockaddr
-#define max(a,b)  ((a)>(b)?(a):(b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
-struct Login_info {
+struct Login_info
+{
 	int client;
 	char account[ACCOUNT_SIZE];
 	char sin_addr[OPT_SIZE];
@@ -29,12 +30,12 @@ struct Login_info LoginInfo[CONN_SETSIZE];
 @server
 get the file and send it to connected client
 */
-void ser_download(const char* filename, int sockfd);
+void ser_download(const char *filename, int sockfd);
 /**
 @server
 read the file from the socket and fwrite to the file
 */
-void ser_upload(const char* filename, int sockdf);
+void ser_upload(const char *filename, int sockdf);
 /**
 @server
 signal handling
@@ -45,7 +46,7 @@ void ser_sig_chid(int signo);
 display the files of the current path from server,
 send the contents to client.
 */
-void ser_ls(char* path, int connfd);
+void ser_ls(char *path, int connfd);
 /**
 @server
 to find whether cmd is a right commander or not
@@ -62,21 +63,20 @@ void ser_cmd_Up(int connfd, char str[10], char strname[20], struct Login_info lo
 @server
 show the on-line user
 */
-void ser_list(int connfd,struct Login_info* logininfo);
+void ser_list(int connfd, struct Login_info *logininfo);
 /**
 @server
 broadcast the message to all the online user.
 */
-void ser_broadcast(int connfd,int udpfd);
+void ser_broadcast(int connfd, int udpfd);
 /**
 @server
 update the sourse from the client
 */
-void ser_update(int fd,int index);
+void ser_update(int fd, int index);
 
 void *doit(void *arg);
 
-int ser_find(int fd,char *filename);
+int ser_find(int fd, char *filename);
 
 #endif // !SERVER_H
-

@@ -52,12 +52,13 @@ int main(int argc, char **argv)
 		printf("inet_ption error for %s", argv[1]);
 	fputs("please enter your acount number:\n", stdout);
 	scanf("%s", account);
-	if ((n = connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) < 0){
+	if ((n = connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) < 0)
+	{
 		printf("connect error");
 		exit(0);
 	}
-	n=write(sockfd,argv[2],10);
-	n=write(sockfd, account, sizeof(account));
+	n = write(sockfd, argv[2], 10);
+	n = write(sockfd, account, sizeof(account));
 	cli_update(sockfd);
 	printf("%s login successfully!\ncmd/>", account);
 
@@ -72,7 +73,7 @@ int main(int argc, char **argv)
 
 	bind(listenfd, (SA *)&connaddr, sizeof(connaddr));
 	listen(listenfd, LISTENQ);
-	pthread_create(&tid,NULL,&cli_listen,&listenfd);
+	pthread_create(&tid, NULL, &cli_listen, &listenfd);
 
 	for (;;)
 	{
@@ -90,7 +91,8 @@ int main(int argc, char **argv)
 		{
 			exit(0);
 		}
-		else if(strcmp(str,"update")==0){
+		else if (strcmp(str, "update") == 0)
+		{
 			cli_update(sockfd);
 		}
 		else if (strcmp(str, "list") == 0)
@@ -98,10 +100,11 @@ int main(int argc, char **argv)
 			printf("this is list\n");
 			cli_list(sockfd);
 		}
-		else if(cli_Iscmd(str)){
-			scanf("%s",strname);
-			send(sockfd,strname,OPT_SIZE,0);
-			cli_cmd_Up(sockfd,str,strname);
+		else if (cli_Iscmd(str))
+		{
+			scanf("%s", strname);
+			send(sockfd, strname, OPT_SIZE, 0);
+			cli_cmd_Up(sockfd, str, strname);
 		}
 		else
 		{
